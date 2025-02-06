@@ -1,0 +1,28 @@
+# Python Virtual Environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# FastAPI & Uvicorn Logs
+*.log
+logs/
+debug.log
+
+# Environment Variables (Secrets)
+.env
+*.env
+
+# IDE / Editor Files
+.vscode/
+.idea/
+*.iml
+
+# OS Specific Files
+.DS_Store
+Thumbs.db
+
+# Byte-compiled / cache files
+*.sqlite3
+*.db
