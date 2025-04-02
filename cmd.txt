@@ -1,1 +1,3 @@
 uvicorn main:app --reload #To run the server
+pan_model = pancard-mp1jt
+api_KEY = l8euJldexdnlej6ptiMb

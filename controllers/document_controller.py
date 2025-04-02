@@ -17,30 +17,36 @@ def convert_to_jpg(temp_file):
 
 def detect_objects(image_url: str, card_type: str):
     try:
-        if card_type != "Aadhar":
+        if card_type not in ["Aadhar", "PAN"]:
             raise HTTPException(status_code=400, detail="Unsupported card type")
 
         image_path = "temp_image.jpg"
         response = requests.get(image_url, stream=True)
         
         if response.status_code != 200:
-            print("Error: Failed to download image from Cloudinary")
             raise HTTPException(status_code=400, detail="Failed to download image from Cloudinary")
 
         with open(image_path, "wb") as file:
             for chunk in response.iter_content(1024):
                 file.write(chunk)
 
-        rf = Roboflow(api_key="LFlCmvBFgaFn7jH9yIWs")
-        project = rf.workspace().project("adhar_obj_detection")
-        model = project.version(1).model 
+        if card_type == "Aadhar":
+            api_key = "LFlCmvBFgaFn7jH9yIWs"
+            project_name = "adhar_obj_detection"
+            expected_fields = ['aadhar no', 'details', 'gov', 'logo', 'photo', 'qr']
+        else:  # PAN
+            api_key = "l8euJldexdnlej6ptiMb"
+            project_name = "pancard-mp1jt"
+            expected_fields = ['details', 'goi', 'pan', 'photo', 'qr', 'silverLogo', 'symbol']
 
-        expected_fields = ['aadhar no', 'details', 'gov', 'logo', 'photo', 'qr']
+        rf = Roboflow(api_key=api_key)
+        project = rf.workspace().project(project_name)
+
+        model = project.version(1).model
 
         predictions = model.predict(image_path, confidence=10, overlap=30).json()
         
         if "predictions" not in predictions:
-            print("Error: No predictions received from Roboflow")
             raise HTTPException(status_code=500, detail="Failed to process image with Roboflow")
 
         detected_fields = list(set(prediction["class"] for prediction in predictions["predictions"])) 
@@ -53,7 +59,7 @@ def detect_objects(image_url: str, card_type: str):
         os.remove(image_path)
 
         return detected_fields, missing_fields
-    
+
     except Exception as e:
         print(f"Error in detect_objects: {str(e)}")  # Debugging log
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
