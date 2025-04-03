@@ -17,7 +17,7 @@ def convert_to_jpg(temp_file):
 
 def detect_objects(image_url: str, card_type: str):
     try:
-        if card_type not in ["Aadhar", "PAN"]:
+        if card_type not in ["Aadhar", "PAN", "Driving License"]:
             raise HTTPException(status_code=400, detail="Unsupported card type")
 
         image_path = "temp_image.jpg"
@@ -34,18 +34,22 @@ def detect_objects(image_url: str, card_type: str):
             api_key = "LFlCmvBFgaFn7jH9yIWs"
             project_name = "adhar_obj_detection"
             expected_fields = ['aadhar no', 'details', 'gov', 'logo', 'photo', 'qr']
-        else:  # PAN
+        elif card_type == "PAN":
             api_key = "l8euJldexdnlej6ptiMb"
             project_name = "pancard-mp1jt"
             expected_fields = ['details', 'goi', 'pan', 'photo', 'qr', 'silverLogo', 'symbol']
+        else:  # Driving License
+            api_key = "K8xsKfZpKUg9anaKIw1I"
+            project_name = "minorproject-5blne"
+            expected_fields = ["Address", "Class", "DOB", "Exp date", "First name", 
+                               "Issue date", "Last name", "License number", "Sex"]
 
         rf = Roboflow(api_key=api_key)
         project = rf.workspace().project(project_name)
-
         model = project.version(1).model
 
         predictions = model.predict(image_path, confidence=10, overlap=30).json()
-        
+
         if "predictions" not in predictions:
             raise HTTPException(status_code=500, detail="Failed to process image with Roboflow")
 
@@ -63,7 +67,6 @@ def detect_objects(image_url: str, card_type: str):
     except Exception as e:
         print(f"Error in detect_objects: {str(e)}")  # Debugging log
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
 
 async def process_document(card_type: str, file: UploadFile):
     temp_file = f"temp_{file.filename}"
