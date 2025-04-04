@@ -83,8 +83,6 @@ async def process_document(card_type: str, file: UploadFile):
         os.remove(temp_file)
         raise HTTPException(status_code=500, detail="Failed to upload image to Cloudinary")
 
-    print("Uploaded Image URL:", cloudinary_url)
-
     os.remove(temp_file)
 
     predictions, detected_fields, missing_fields = detect_objects(cloudinary_url, card_type)
