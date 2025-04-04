@@ -57,12 +57,12 @@ def detect_objects(image_url: str, card_type: str):
 
         for prediction in predictions["predictions"]:
             print(f"Detected: {prediction['class']} with confidence {prediction['confidence']}")
-
+    
         missing_fields = [field for field in expected_fields if field not in detected_fields]
         
         os.remove(image_path)
 
-        return detected_fields, missing_fields
+        return predictions, detected_fields, missing_fields
 
     except Exception as e:
         print(f"Error in detect_objects: {str(e)}")  # Debugging log
@@ -73,7 +73,7 @@ async def process_document(card_type: str, file: UploadFile):
     with open(temp_file, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    if file.filename.lower().endswith(".png"):  # Fixed condition
+    if file.filename.lower().endswith(".png"):
         temp_file = convert_to_jpg(temp_file)
 
     upload_result = cloudinary.uploader.upload(temp_file)
@@ -87,11 +87,12 @@ async def process_document(card_type: str, file: UploadFile):
 
     os.remove(temp_file)
 
-    detected_fields, missing_fields = detect_objects(cloudinary_url, card_type)
+    predictions, detected_fields, missing_fields = detect_objects(cloudinary_url, card_type)
 
     if missing_fields:
         raise HTTPException(status_code=400, detail={
             "message": "Required objects not detected in the image.",
+            "predictions": predictions,
             "detected_fields": detected_fields,
             "missing_fields": missing_fields
         })  
@@ -100,5 +101,6 @@ async def process_document(card_type: str, file: UploadFile):
         "message": "Success",
         "cloudinary_url": cloudinary_url,
         "detected_fields": detected_fields,
-        "missing_fields": missing_fields
+        "missing_fields": missing_fields,
+        "predictions": predictions
     }
