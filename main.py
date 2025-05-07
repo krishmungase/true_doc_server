@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.detection import router as document_router
+import config  # Import Cloudinary configuration
 
 app = FastAPI()
 
