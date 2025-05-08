@@ -106,7 +106,51 @@ class TextExtractor:
         
         return intersection / union > threshold
 
-    def extract_text_from_region(self, image, x, y, width, height, confidence_threshold=0.5):
+    def clean_text(self, text, field_type=None):
+        """Enhanced text cleaning and formatting based on field type"""
+        try:
+            # Remove special characters but keep alphanumeric, spaces, and common punctuation
+            text = re.sub(r'[^a-zA-Z0-9\s/]', '', text)
+            
+            # Remove extra spaces
+            text = ' '.join(text.split())
+            
+            # Field-specific cleaning
+            if field_type:
+                if field_type in ['First name', 'Last name', 'name']:
+                    # Remove numbers from names
+                    text = re.sub(r'\d', '', text)
+                    # Remove common OCR errors in names
+                    text = text.replace('0', 'O').replace('1', 'I')
+                elif field_type in ['License number', 'license_number']:
+                    # Keep only alphanumeric for license numbers
+                    text = re.sub(r'[^A-Z0-9]', '', text)
+                elif field_type in ['Address', 'address']:
+                    # Keep address format
+                    text = re.sub(r'\s+', ' ', text)
+                elif field_type in ['DOB', 'dob', 'Issue date', 'issue_date', 'Exp date', 'expiry_date']:
+                    # Format dates
+                    text = re.sub(r'[^0-9/]', '', text)
+            
+            # Convert to uppercase for consistency
+            text = text.upper()
+            
+            # Remove duplicate words
+            words = text.split()
+            unique_words = []
+            seen_words = set()
+            for word in words:
+                if word not in seen_words:
+                    seen_words.add(word)
+                    unique_words.append(word)
+            
+            return ' '.join(unique_words)
+            
+        except Exception as e:
+            print(f"Error in text cleaning: {str(e)}")
+            return text
+
+    def extract_text_from_region(self, image, x, y, width, height, field_type=None, confidence_threshold=0.5):
         """Extract text from a specific region with improved accuracy"""
         try:
             # Add padding to the region
@@ -139,13 +183,29 @@ class TextExtractor:
             
             # Filter results by confidence and get unique texts
             filtered_texts = [text for _, text, conf in results if conf > confidence_threshold]
-            unique_texts = self.remove_duplicate_text(filtered_texts)
             
-            if unique_texts:
-                # Use the text with highest confidence if available
-                final_text = unique_texts[0]
-                # Clean the text
-                final_text = self.clean_text(final_text)
+            if filtered_texts:
+                # Clean and format text based on field type
+                cleaned_texts = [self.clean_text(text, field_type) for text in filtered_texts]
+                
+                # Remove duplicates while preserving order
+                seen = set()
+                unique_texts = []
+                for text in cleaned_texts:
+                    if text not in seen:
+                        seen.add(text)
+                        unique_texts.append(text)
+                
+                # For 'details' field, join all unique lines with '\n'
+                if field_type and field_type.lower() == 'details':
+                    return '\n'.join(unique_texts)
+                # For certain fields, use the longest text as it's likely to be most complete
+                if field_type in ['Address', 'address', 'name', 'First name', 'Last name']:
+                    final_text = max(unique_texts, key=len)
+                else:
+                    # For other fields, use the first text as it's likely to be most accurate
+                    final_text = unique_texts[0]
+                
                 return final_text
             
             return ""
@@ -153,41 +213,6 @@ class TextExtractor:
         except Exception as e:
             print(f"Error in text extraction: {str(e)}")
             return ""
-
-    def clean_text(self, text):
-        """Enhanced text cleaning and formatting"""
-        try:
-            # Remove special characters but keep alphanumeric, spaces, and common punctuation
-            text = re.sub(r'[^a-zA-Z0-9\s/]', '', text)
-            
-            # Remove extra spaces
-            text = ' '.join(text.split())
-            
-            # Remove common OCR errors
-            text = text.replace('0', 'O')  # Replace 0 with O in text
-            text = text.replace('1', 'I')  # Replace 1 with I in text
-            
-            # Convert to uppercase for consistency
-            text = text.upper()
-            
-            # Remove any remaining numbers from text fields that should be letters
-            if re.match(r'^[A-Z]+$', text):
-                text = re.sub(r'\d', '', text)
-            
-            # Remove duplicate words
-            words = text.split()
-            unique_words = []
-            seen_words = set()
-            for word in words:
-                if word not in seen_words:
-                    seen_words.add(word)
-                    unique_words.append(word)
-            
-            return ' '.join(unique_words)
-            
-        except Exception as e:
-            print(f"Error in text cleaning: {str(e)}")
-            return text
 
     def extract_document_text(self, image, predictions):
         """Extract text from all predicted regions in the document"""
@@ -209,6 +234,7 @@ class TextExtractor:
                 # Extract text from the region
                 text = self.extract_text_from_region(
                     image, x, y, width, height,
+                    field_type=class_name,
                     confidence_threshold=0.5
                 )
                 

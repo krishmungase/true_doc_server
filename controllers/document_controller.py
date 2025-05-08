@@ -48,8 +48,7 @@ def detect_objects(image_url: str, card_type: str):
         else:  # Driving License
             api_key = "K8xsKfZpKUg9anaKIw1I"
             project_name = "minorproject-5blne"
-            expected_fields = ["Address", "Class", "DOB", "Exp date", "First name", 
-                             "Issue date", "Last name", "License number", "Sex"]
+            expected_fields = ["Address", "Class", "DOB", "Exp date", "First name", "Issue date", "Last name", "License number", "Sex"]
 
         # Initialize Roboflow
         rf = Roboflow(api_key=api_key)
