@@ -44,11 +44,11 @@ def detect_objects(image_url: str, card_type: str):
         elif card_type == "PAN":
             api_key = "l8euJldexdnlej6ptiMb"
             project_name = "pancard-mp1jt"
-            expected_fields = ['details', 'goi', 'pan', 'photo', 'qr', 'silverLogo', 'symbol']
+            expected_fields = ['details', 'goi', 'pan', 'photo', 'qr', 'symbol']
         else:  # Driving License
             api_key = "K8xsKfZpKUg9anaKIw1I"
             project_name = "minorproject-5blne"
-            expected_fields = ["Address", "Class", "DOB", "Exp date", "First name", "Issue date", "Last name", "License number", "Sex"]
+            expected_fields = ["Address", "DOB", "Exp date", "First name", "Issue date", "Last name", "License number", "Sex"]
 
         # Initialize Roboflow
         rf = Roboflow(api_key=api_key)
