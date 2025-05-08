@@ -44,7 +44,7 @@ def detect_objects(image_url: str, card_type: str):
         elif card_type == "PAN":
             api_key = "l8euJldexdnlej6ptiMb"
             project_name = "pancard-mp1jt"
-            expected_fields = ['details', 'goi', 'pan', 'photo', 'qr', 'silverLogo', 'symbol']
+            expected_fields = ['details', 'goi', 'pan', 'photo', 'qr', 'symbol']
         else:  # Driving License
             api_key = "K8xsKfZpKUg9anaKIw1I"
             project_name = "minorproject-5blne"
